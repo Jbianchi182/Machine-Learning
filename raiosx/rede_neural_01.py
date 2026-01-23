@@ -44,6 +44,7 @@ class Modelo(nn.Module):
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(0.5)
         self.fc1 = nn.Linear(64 * 56 * 56, 128)
         self.fc2 = nn.Linear(128, 3)
 
@@ -52,6 +53,7 @@ class Modelo(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 64 * 56 * 56)
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = self.fc2(x)
         return x
 
@@ -84,7 +86,7 @@ def treino_modelo(modelo, train_loader, val_loader, criterio, otimizador, num_ep
 
         perda_val /= len(val_loader.dataset)
 
-        print(f'Época {epoch+1}/{num_epochs}, \nPerda Treino: {perda_treino:.4f}, \nPerda Validação: {perda_val:.4f}')
+        print(f'Época: {epoch+1}/{num_epochs}, \nPerda Treino: {perda_treino:.4f}, \nPerda Validação: {perda_val:.4f}')
         print(f'Tempo por época: {time() - inicio:.2f} segundos\n')
 
 
@@ -108,7 +110,11 @@ modelo = Modelo()
 criterio = nn.CrossEntropyLoss()
 dispositivo = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 modelo.to(dispositivo)
-otimizador = optim.Adam(modelo.parameters(), lr=0.001)
+otimizador = optim.Adam(modelo.parameters(), lr=0.0001)
 
 treino_modelo(modelo, train_loader, val_loader, criterio, otimizador, num_epochs=10)
 validacao_modelo(modelo, val_loader)
+
+# Salvando o modelo treinado
+torch.save(modelo.state_dict(), 'modelo_raio_x.pth')
+print("Modelo salvo com sucesso!")
